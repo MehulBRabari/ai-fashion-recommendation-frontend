@@ -11,42 +11,53 @@ export default function WebcamCapture({ onStart, onSuccess, onError }) {
   const [capturedImg, setCapturedImg] = useState(null);
   const [camError, setCamError] = useState(null);
 
-  // Cleanup stream on unmount
-  useEffect(() => {
-    return () => stopCamera();
-  }, []);
-
-  const startCamera = async () => {
-    setStatus('requesting');
-    setCamError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setStatus('live');
-    } catch (err) {
-      const msg = err.name === 'NotAllowedError'
-        ? 'Camera access denied. Please allow camera access in your browser settings.'
-        : `Camera error: ${err.message}`;
-      setCamError(msg);
-      setStatus('error');
-    }
-  };
-
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
   }, []);
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => stopCamera();
+  }, [stopCamera]);
+
+  const startCamera = async () => {
+    setStatus("requesting");
+    setCamError(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: "user",
+        },
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+
+      setStatus("live");
+    } catch (err) {
+      const msg =
+        err.name === "NotAllowedError"
+          ? "Camera access denied. Please allow camera access in your browser settings."
+          : `Camera error: ${err.message}`;
+
+      setCamError(msg);
+      setStatus("error");
+    }
+  };
 
   const captureFrame = useCallback(() => {
     const video  = videoRef.current;
